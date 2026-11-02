@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Users</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css)">
+    <style>
+        .role-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; color: white; display: inline-block; }
+        .role-admin { background-color: #c0392b; }
+        .role-supervisor { background-color: #8e44ad; }
+        .role-student { background-color: #2980b9; }
+        .action-cell { white-space: nowrap; }
+    </style>
+</head>
+<body>
+    {% include 'sidebar.html' ignore missing %}
+    <div class="main-content">
+        {% include 'header.html' ignore missing %}
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 class="header-title" style="margin-bottom:0;">User Management</h2>
+            <a href="admin_add_user.php" class="btn btn-view" style="background-color: var(--btn-primary); padding: 10px 20px;"><i class="fas fa-user-plus"></i> Add User</a>
+        </div>
+
+        {% if filter_msg %}
+            <div style="background:#fff3cd; color:#856404; padding:10px; margin-bottom:15px; border-left:5px solid #ffc107;">
+                <strong>Filter Active:</strong> {{ filter_msg }}
+                <a href="admin_manage.php" style="margin-left:15px; color:#856404; font-weight:bold;">Clear Filter</a>
+            </div>
+        {% endif %}
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr><th>Full Name</th><th>Email / Contact</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in users %}
+                    <tr style="{{ 'background:rgba(231, 76, 60, 0.1);' if row.reset_request == 1 else '' }}">
+                        <td>
+                            <strong>{{ row.fullname or 'N/A' }}</strong>
+                            {% if row.reset_request == 1 %}
+                                <span style="color:#e74c3c; margin-left:5px;" title="Requested Password Reset">
+                                    <i class="fas fa-key"></i> <small style="font-weight:bold;">Reset Requested</small>
+                                </span>
+                            {% endif %}
+                            <br><small style="opacity:0.7;">ID: {{ row.username or 'N/A' }}</small>
+                        </td>
+                        <td>{{ row.email or 'N/A' }}</td>
+                        <td>
+                            {% set role = row.role or 'student' %}
+                            {% set role_class = 'role-admin' if role == 'admin' else ('role-supervisor' if role == 'supervisor' else 'role-student') %}
+                            <span class="role-badge {{ role_class }}">{{ role.replace('_', ' ') }}</span>
+                        </td>
+                        <td>
+                            {% if (row.status or 'suspended')|trim|lower == 'active' %}
+                                <span style="color:#27ae60; font-weight:bold; font-size:12px;">Active</span>
+                            {% else %}
+                                <span style="color:#e74c3c; font-weight:bold; font-size:12px;">Suspended</span>
+                            {% endif %}
+                        </td>
+                        <td class="action-cell">
+                            <a href="edit_user.php?id={{ row.id }}" class="btn btn-edit"><i class="fas fa-edit"></i> Edit</a>
+                            <a href="?delete_id={{ row.id }}" class="btn btn-remove" onclick="return confirm('Delete user?');"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html>

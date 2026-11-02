@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Progress: {{ student.fullname }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function insertQuickText() {
+            var select = document.getElementById("quickText");
+            var textarea = document.getElementById("notesArea");
+            if (select.value !== "") {
+                textarea.value += (textarea.value ? "\n" : "") + select.value;
+                select.selectedIndex = 0;
+            }
+        }
+    </script>
+    <style>
+        .split-view { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        @media (max-width: 1000px) { .split-view { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    {% include 'sidebar.php' %}
+    <div class="main-content">
+        <div class="top-header">
+            <div class="greeting-box">
+                <h2>Welcome, {{ session.fullname }}</h2>
+            </div>
+            <button id="themeToggle" class="theme-toggle"><i class="fas fa-moon"></i> Dark Mode</button>
+        </div>
+
+        <h2 class="header-title">Student: {{ student.fullname }}</h2>
+        {% if msg %}<p style='color:green; background:var(--input-bg); padding:10px; border:1px solid var(--btn-primary); border-radius:4px;'>{{ msg }}</p>{% endif %}
+
+        <div class="split-view">
+            <div>
+                <div class="card">
+                    <h3><i class="fas fa-chart-line"></i> Competency Progress</h3>
+                    <div style="height: 300px; width: 100%;"><canvas id="studentChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-history"></i> Evaluation History</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Date</th><th>Title</th><th>Score</th><th>Status</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for row in history_data %}
+                            <tr>
+                                <td>{{ row.upload_date.strftime('%b %d') if row.upload_date else '' }}</td>
+                                <td>{{ row.evaluation_title if row.evaluation_title else 'General Eval' }}</td>
+                                <td><strong>{{ row.competency_score }}</strong>/10</td>
+                                <td>
+                                    {% if row.status == 'accepted' %}
+                                        <span class="badge" style="background:#27ae60; color:white; padding:4px 8px; border-radius:4px; font-size:11px;">Accepted</span>
+                                    {% else %}
+                                        <span class="badge" style="background:#f39c12; color:white; padding:4px 8px; border-radius:4px; font-size:11px;">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td><a href="/supervisor_view_evaluation.php?id={{ row.id }}" class="btn btn-view" style="padding: 5px 10px; font-size: 11px;">View</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <div class="card" style="border-top: 5px solid #3498db; position: sticky; top: 20px;">
+                    <h3><i class="fas fa-pen-nib"></i> General Evaluation</h3>
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label>Title / Activity Name</label>
+                            <input type="text" name="eval_title" class="form-control" placeholder="e.g. Classroom Observation 1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Competency Score (1-10)</label>
+                            <input type="number" name="score" class="form-control" min="1" max="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quick Feedback</label>
+                            <select id="quickText" class="form-control" onchange="insertQuickText()">
+                                <option value="">-- Insert Phrase --</option>
+                                <option value="Student demonstrated excellent classroom management.">Classroom Management</option>
+                                <option value="Lesson objectives were clearly met.">Objectives Met</option>
+                                <option value="Needs to work on voice projection and confidence.">Voice/Confidence</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes / Feedback</label>
+                            <textarea name="notes" id="notesArea" class="form-control" rows="6" placeholder="Enter detailed feedback..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Attach Rubric/File (Optional)</label>
+                            <input type="file" name="file" class="form-control">
+                        </div>
+                        <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Submit Evaluation</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('studentChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ dates | safe }},
+                datasets: [{
+                    label: 'Competency Score (Accepted)',
+                    data: {{ scores | safe }},
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 10 } } }
+        });
+    </script>
+</body>
+</html>
