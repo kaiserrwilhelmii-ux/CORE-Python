@@ -1,0 +1,27 @@
+DirectoryIndex landing.php index.php
+
+  # Disable Directory Browsing
+Options -Indexes
+
+# Protect Sensitive Configuration Files
+<FilesMatch "^\.env|\.git|schema\.sql|composer\.(json|lock)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Character Encoding
+AddDefaultCharset UTF-8
+
+# Upload limits
+<IfModule mod_php.c>
+    php_value upload_max_filesize 25M
+    php_value post_max_size 30M
+    php_value max_execution_time 120
+    php_value max_input_time 120
+</IfModule>
+
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.*)$ $1.php [L,QSA]
